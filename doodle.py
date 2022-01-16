@@ -1,8 +1,10 @@
 import os
+import random
+
 import pygame
 import sys
 
-from platforms import Platform, all_sprites
+from platforms import all_sprites, create_level
 
 
 def load_image(name):
@@ -17,10 +19,12 @@ def load_image(name):
     return image
 
 
+pl1, pl2, pl3, pl4, pl5, pl6, pl7, pl8 = '', '', '', '', '', '', '', ''
+STOP, NEXT = False, True
 BOI_LEFT = load_image('blue_doodle_left.png')
 BOI_RIGHT = load_image('blue_doodle_right.png')
 BOI_UP = load_image('blue_doodle_up.png')
-
+END = False
 
 class Doodle(pygame.sprite.Sprite):
     image = BOI_LEFT
@@ -31,61 +35,90 @@ class Doodle(pygame.sprite.Sprite):
         self.image = Doodle.image
         self.rect = self.image.get_rect()
         self.rect.x = 250
-        self.rect.y = 640
+        self.rect.y = 810
         # self.mask = pygame.mask.from_surface(self.image)
 
         self.velocity = 1
-        self.distance = 50
+        self.distance = 100
         self.is_up = True
 
     def update(self, timedelta):
-        change = round(timedelta * self.velocity)
+        change = timedelta * self.velocity
 
-        if not self.is_up:
+        if not self.is_up or not self.distance:
             self.rect = self.rect.move(0, change)
 
         if self.distance and self.distance - change > 0:
             self.rect = self.rect.move(0, -change)
             self.distance -= change
-            return
 
-        if self.distance and self.distance - change < 0:
+        elif self.distance and self.distance - change < 0:
             self.rect = self.rect.move(0, -self.distance)
             self.distance = 0
             self.is_up = False
-            return
+
+        if self.rect.y >= 830:
+            global END
+            END = True
+
+        if self.rect.y <= 0:
+            global NEXT
+            NEXT = True
+            self.rect.y = 810
+
+        for i in all_sprites:
+            if self.rect.y + 50 == i.rect.y and \
+                    (i.__class__.__name__ == 'Platform' or i.__class__.__name__ == 'MovingPlatform') \
+                    and pygame.sprite.collide_mask(self, i):
+                self.is_up = True
+                self.distance = 175
+                return
 
 
-size = width, height = 500, 900
-screen = pygame.display.set_mode(size)
-running = True
-pygame.display.set_caption('Doodle Test')
-clock = pygame.time.Clock()
-
-hero = Doodle()
-pl = Platform(10, 350)
-hero_sprite = pygame.sprite.Group()
-hero_sprite.add(hero)
-
-while running:
-    clock.tick(60)
-    timedelta = 10
-    hero.update(timedelta)
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT or event.key == pygame.K_a:
-                hero.rect.x -= 10
-                hero.image = BOI_LEFT
-
-            if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
-                hero.rect.x += 10
-                hero.image = BOI_RIGHT
-
-    screen.fill((255, 255, 255))
-    all_sprites.draw(screen)
-    hero_sprite.draw(screen)
-    pygame.display.flip()
+# size = width, height = 500, 900
+# screen = pygame.display.set_mode(size)
+# running = True
+# pygame.display.set_caption('Doodle Test')
+# clock = pygame.time.Clock()
+#
+# hero = Doodle()
+# hero_sprite = pygame.sprite.Group()
+# hero_sprite.add(hero)
+#
+# while running:
+#     if NEXT:
+#         for j in all_sprites:
+#             j.kill()
+#         create_level()
+#         NEXT = False
+#
+#     for event in pygame.event.get():
+#         if event.type == pygame.QUIT:
+#             running = False
+#
+#     if not STOP:
+#         timedelta = clock.tick(60) / 15
+#
+#         for m in all_sprites:
+#
+#             m.update(timedelta)
+#
+#         hero.update(timedelta)
+#
+#         for event in pygame.event.get():
+#             if event.type == pygame.QUIT:
+#                 running = False
+#
+#             if event.type == pygame.KEYDOWN:
+#                 if event.key == pygame.K_LEFT or event.key == pygame.K_a:
+#                     hero.rect.x -= 20
+#                     hero.image = BOI_LEFT
+#
+#                 if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
+#                     hero.rect.x += 20
+#                     hero.image = BOI_RIGHT
+#
+#         screen.fill((255, 255, 255))
+#         all_sprites.draw(screen)
+#         hero_sprite.draw(screen)
+#         pygame.display.flip()
